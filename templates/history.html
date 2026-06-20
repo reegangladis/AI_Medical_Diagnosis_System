@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Patient History | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" style="color:var(--primary)"><use href="#icon-history"/></svg>
+    Patient History
+  </span>
+{% endblock %}
+
+{% block head %}
+<style>
+.record-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;
+  display:flex;gap:1.4rem;transition:all 0.25s;margin-bottom:1rem;position:relative;overflow:hidden;
+}
+.record-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--grad-primary);transform:scaleY(0);transform-origin:bottom;transition:transform 0.3s;
+}
+.record-card:hover{border-color:rgba(59,130,246,0.25);transform:translateX(5px);box-shadow:-5px 0 24px rgba(59,130,246,0.06);}
+.record-card:hover::before{transform:scaleY(1);}
+.record-img{width:130px;height:110px;object-fit:cover;border-radius:14px;border:1px solid rgba(255,255,255,0.07);flex-shrink:0;}
+.record-body{flex:1;}
+.record-meta{display:flex;flex-wrap:wrap;gap:6px;margin:0.65rem 0;}
+.record-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:0.9rem;}
+
+.search-bar{display:flex;gap:10px;margin-bottom:1.5rem;}
+.search-bar input{flex:1;padding:12px 18px 12px 44px;background:var(--surface);border:1px solid var(--border);border-radius:14px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;outline:none;transition:all 0.2s;}
+.search-bar input::placeholder{color:var(--text-3);}
+.search-bar input:focus{border-color:rgba(59,130,246,0.5);box-shadow:0 0 0 3px rgba(59,130,246,0.08);}
+.search-wrapper{position:relative;flex:1;}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-3);display:flex;align-items:center;}
+
+.timeline-wrapper{position:relative;padding-left:28px;}
+.timeline-wrapper::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,rgba(59,130,246,0.6),rgba(59,130,246,0.05));}
+.timeline-dot{position:absolute;left:-28px;top:1.5rem;width:16px;height:16px;border-radius:50%;background:var(--grad-primary);border:2px solid var(--bg);box-shadow:0 0 12px var(--primary-glow);}
+
+.empty-state{text-align:center;padding:3.5rem 2rem;}
+.empty-icon{width:72px;height:72px;background:var(--surface-2);border-radius:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:var(--text-3);}
+
+@media(max-width:600px){.record-card{flex-direction:column;}.record-img{width:100%;height:180px;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;" class="animate-fade-up">
+  <p style="color:var(--text-3);font-size:0.87rem;">Complete diagnosis archive and clinical records</p>
+  <a href="/" class="btn btn-primary btn-sm">
+    <svg width="14" height="14"><use href="#icon-scan"/></svg>
+    New Scan
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-3 animate-fade-up delay-1" style="margin-bottom:2rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(59,130,246,0.14);color:var(--primary);">
+      <svg><use href="#icon-chart"/></svg>
+    </div>
+    <div class="stat-number" data-count="{{ rows|length }}">0</div>
+    <div class="stat-label">Total Records</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(16,185,129,0.14);color:var(--emerald);">
+      <svg><use href="#icon-clipboard"/></svg>
+    </div>
+    <div class="stat-number" data-count="{{ rows|length }}">0</div>
+    <div class="stat-label">PDF Reports</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(6,182,212,0.14);color:var(--accent);">
+      <svg><use href="#icon-search"/></svg>
+    </div>
+    <div class="stat-number">✓</div>
+    <div class="stat-label">Search Enabled</div>
+  </div>
+</div>
+
+<!-- Search -->
+<form class="search-bar reveal" method="GET">
+  <div class="search-wrapper">
+    <span class="search-icon"><svg width="16" height="16"><use href="#icon-search"/></svg></span>
+    <input type="text" name="patient_id" placeholder="Search by Patient ID…" value="{{ patient_id }}">
+  </div>
+  <button type="submit" class="btn btn-primary">Search</button>
+  {% if patient_id %}
+  <a href="/history" class="btn btn-ghost">Clear</a>
+  {% endif %}
+</form>
+
+<!-- Empty state -->
+{% if rows|length == 0 %}
+<div class="card empty-state reveal">
+  <div class="empty-icon">
+    <svg width="32" height="32"><use href="#icon-history"/></svg>
+  </div>
+  <h3 style="font-family:var(--font-display);font-weight:700;">No diagnosis records found</h3>
+  <p style="margin-top:0.5rem;color:var(--text-3);font-size:0.9rem;">Upload a medical scan to begin building your patient history.</p>
+  <a href="/" class="btn btn-primary" style="margin-top:1.4rem;display:inline-flex;">
+    <svg width="16" height="16"><use href="#icon-scan"/></svg>
+    Start First Scan
+  </a>
+</div>
+{% endif %}
+
+<!-- Timeline -->
+<div class="timeline-wrapper">
+  {% for row in rows %}
+  <div class="record-card reveal">
+    <div class="timeline-dot"></div>
+    <img class="record-img" src="{{ url_for('static', filename='uploads/' + row[5]) }}" alt="scan" onerror="this.style.display='none'">
+    <div class="record-body">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <div>
+          <div style="font-family:var(--font-display);font-weight:700;color:var(--text);font-size:1rem;">{{ row[1] }}</div>
+          <div style="font-size:0.82rem;color:var(--text-3);margin-top:2px;">Patient ID: {{ row[2] }} · {{ row[3] }} yrs · {{ row[4] }}</div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-3);font-family:var(--font-mono);display:flex;align-items:center;gap:5px;">
+          <svg width="12" height="12"><use href="#icon-calendar"/></svg>
+          {{ row[11] }}
+        </div>
+      </div>
+      <div class="record-meta">
+        <span class="badge badge-blue">{{ row[6]|upper }}</span>
+        <span class="badge badge-green">{{ row[7] }}</span>
+        <span class="badge badge-amber">{{ "%.2f"|format(row[8]) }}%</span>
+        <span class="badge badge-amber">{{ row[9] }}</span>
+        {% if row[10] %}<span class="badge badge-red">{{ row[10] }}</span>{% endif %}
+      </div>
+      <div class="record-actions">
+        <a class="btn btn-primary btn-sm" href="{{ url_for('static', filename=row[12]) }}" target="_blank">
+          <svg width="13" height="13"><use href="#icon-clipboard"/></svg> PDF Report
+        </a>
+        {% if row[13] %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('static', filename=row[13]) }}" target="_blank">
+          <svg width="13" height="13"><use href="#icon-target"/></svg> Heatmap
+        </a>
+        {% endif %}
+        <a class="btn btn-secondary btn-sm" href="/ai_doctor?disease={{ row[6] }}&prediction={{ row[7] }}&confidence={{ row[8] }}&severity={{ row[9] }}&emergency={{ row[10] }}">
+          <svg width="13" height="13"><use href="#icon-robot"/></svg> AI Doctor
+        </a>
+        <a class="btn btn-ghost btn-sm" href="/hospital_directory?disease={{ row[6] }}">
+          <svg width="13" height="13"><use href="#icon-hospital"/></svg> Hospitals
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

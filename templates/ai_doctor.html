@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}AI Doctor | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" style="color:var(--violet)"><use href="#icon-robot"/></svg>
+    AI Doctor
+  </span>
+{% endblock %}
+
+{% block head %}
+<style>
+.chat-layout{display:grid;grid-template-columns:1fr 310px;gap:1.5rem;height:calc(100vh - var(--nav-h) - 5rem - 140px);min-height:520px;}
+.chat-window{display:flex;flex-direction:column;background:rgba(5,12,26,0.65);border:1px solid var(--border);border-radius:24px;overflow:hidden;}
+.chat-header{padding:1.2rem 1.5rem;background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(139,92,246,0.05));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.ai-avatar{width:46px;height:46px;background:var(--grad-violet);border-radius:15px;display:flex;align-items:center;justify-content:center;animation:ai-glow 3s ease-in-out infinite;flex-shrink:0;position:relative;overflow:hidden;}
+.ai-avatar::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.18),transparent 60%);}
+.ai-avatar svg{position:relative;z-index:1;}
+@keyframes ai-glow{0%,100%{box-shadow:0 0 16px rgba(139,92,246,0.35);}50%{box-shadow:0 0 32px rgba(139,92,246,0.65);}}
+.ai-status{width:9px;height:9px;background:var(--emerald);border-radius:50%;margin-left:auto;box-shadow:0 0 10px rgba(16,185,129,0.7);flex-shrink:0;}
+
+.chat-messages{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:1rem;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.06) transparent;}
+.message{display:flex;gap:10px;animation:msg-in 0.3s ease;}
+@keyframes msg-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.message.user-msg{flex-direction:row-reverse;}
+.msg-avatar{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.msg-bubble{max-width:75%;padding:0.9rem 1.2rem;border-radius:18px;font-size:0.88rem;line-height:1.7;}
+.ai-bubble{background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.07);color:var(--text-2);border-radius:4px 18px 18px 18px;}
+.user-bubble{background:var(--grad-primary);color:white;border-radius:18px 4px 18px 18px;}
+
+.typing-dots{display:flex;gap:4px;padding:0.9rem 1.2rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:4px 18px 18px 18px;width:fit-content;}
+.typing-dots span{width:7px;height:7px;background:var(--text-3);border-radius:50%;animation:typing-dot 1.2s ease-in-out infinite;}
+.typing-dots span:nth-child(2){animation-delay:0.2s;}
+.typing-dots span:nth-child(3){animation-delay:0.4s;}
+@keyframes typing-dot{0%,60%,100%{transform:translateY(0);opacity:0.35;}30%{transform:translateY(-7px);opacity:1;}}
+
+.chat-input-bar{padding:1rem;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0;background:rgba(2,8,16,0.5);}
+.chat-input{flex:1;padding:12px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:14px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;outline:none;transition:all 0.2s;}
+.chat-input::placeholder{color:var(--text-3);}
+.chat-input:focus{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.04);}
+
+.icon-btn{width:44px;height:44px;border-radius:13px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;}
+.icon-btn svg{width:18px;height:18px;}
+.mic-btn{background:rgba(6,182,212,0.12);color:var(--accent);border:1px solid rgba(6,182,212,0.2);}
+.mic-btn:hover{background:rgba(6,182,212,0.22);transform:scale(1.06);}
+.mic-btn.listening{animation:mic-pulse 1s ease-in-out infinite;background:rgba(6,182,212,0.28);}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,0.45);}50%{box-shadow:0 0 0 10px rgba(6,182,212,0);}}
+.send-btn{background:var(--grad-primary);color:white;box-shadow:0 4px 16px var(--primary-glow);}
+.send-btn:hover{transform:scale(1.06);box-shadow:0 6px 24px var(--primary-glow);}
+
+.quick-chips{padding:0.8rem 1rem;display:flex;gap:7px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.04);flex-shrink:0;}
+.chip{padding:6px 13px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.14);border-radius:99px;font-size:0.77rem;color:#93c5fd;cursor:pointer;transition:all 0.2s;white-space:nowrap;font-weight:500;}
+.chip:hover{background:rgba(59,130,246,0.18);border-color:rgba(59,130,246,0.32);color:#bfdbfe;}
+
+.side-panel{display:flex;flex-direction:column;gap:1rem;}
+
+.wave-bar{width:3px;background:var(--primary);border-radius:99px;animation:wave 1.2s ease-in-out infinite;}
+@keyframes wave{0%,100%{height:7px;opacity:0.3;}50%{height:26px;opacity:1;}}
+.wave-bar:nth-child(2){animation-delay:0.12s;}
+.wave-bar:nth-child(3){animation-delay:0.24s;}
+.wave-bar:nth-child(4){animation-delay:0.36s;}
+.wave-bar:nth-child(5){animation-delay:0.48s;}
+.wave-bar:nth-child(6){animation-delay:0.36s;}
+.wave-bar:nth-child(7){animation-delay:0.24s;}
+.wave-bar:nth-child(8){animation-delay:0.12s;}
+
+@media(max-width:900px){.chat-layout{grid-template-columns:1fr;}.side-panel{display:none;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Context row -->
+<div class="card animate-fade-up" style="margin-bottom:1.5rem;padding:1.1rem 1.4rem;">
+  <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <div style="font-size:0.75rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.8px;flex-shrink:0;">Diagnosis Context</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      {% if disease %}<span class="badge badge-blue">{{ disease|upper }}</span>{% endif %}
+      {% if prediction %}<span class="badge badge-green">{{ prediction }}</span>{% endif %}
+      {% if confidence %}<span class="badge badge-cyan">{{ confidence }}%</span>{% endif %}
+      {% if severity %}<span class="badge badge-amber">{{ severity }}</span>{% endif %}
+      {% if emergency %}<span class="badge badge-red">Emergency</span>{% endif %}
+      {% if not disease and not prediction %}
+      <span class="badge" style="background:var(--surface-2);color:var(--text-3);border-color:var(--border);">No context — ask any medical question</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="chat-layout">
+
+  <!-- Chat window -->
+  <div class="chat-window">
+    <div class="chat-header">
+      <div class="ai-avatar">
+        <svg width="22" height="22" fill="none" stroke="white" stroke-width="1.8"><use href="#icon-robot"/></svg>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display);font-weight:700;color:var(--text);font-size:0.95rem;">AI Clinical Assistant</div>
+        <div style="font-size:0.74rem;color:var(--text-3);">Voice-enabled · Medical intelligence</div>
+      </div>
+      <div class="ai-status"></div>
+      <button onclick="stopSpeaking()" class="btn btn-ghost btn-sm" style="margin-left:8px;flex-shrink:0;">
+        <svg width="14" height="14"><use href="#icon-x"/></svg> Stop
+      </button>
+    </div>
+
+    <div class="quick-chips">
+      <span class="chip" onclick="askQuick('What treatment should I take?')">💊 Treatment?</span>
+      <span class="chip" onclick="askQuick('Is this condition serious?')">How serious?</span>
+      <span class="chip" onclick="askQuick('Suggest specialist hospitals nearby')">
+        <svg width="11" height="11" style="vertical-align:middle;"><use href="#icon-hospital"/></svg> Find hospitals
+      </span>
+      <span class="chip" onclick="askQuick('What foods should I avoid?')">🥗 Diet advice</span>
+      <span class="chip" onclick="askQuick('How can I recover faster?')">Recovery tips</span>
+      <span class="chip" onclick="askQuick('What are the warning signs to watch for?')">Warning signs</span>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="message">
+        <div class="msg-avatar" style="background:rgba(139,92,246,0.18);">
+          <svg width="16" height="16" fill="none" stroke="var(--violet)" stroke-width="1.8"><use href="#icon-robot"/></svg>
+        </div>
+        <div class="ai-bubble msg-bubble">
+          Hello! I'm your AI Medical Assistant. I have context about your current diagnosis. Feel free to ask me anything about your condition, medications, treatment options, diet restrictions, or hospital recommendations. You can also use voice — tap the microphone!
+        </div>
+      </div>
+    </div>
+
+    <div id="voiceStatus" style="padding:0 1rem 0.4rem;font-size:0.79rem;color:var(--accent);font-weight:600;min-height:22px;"></div>
+
+    <div class="chat-input-bar">
+      <input class="chat-input" type="text" id="userInput" placeholder="Ask a medical question…" autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="icon-btn mic-btn" id="micBtn" onclick="startVoiceInput()" title="Voice input">
+        <svg><use href="#icon-mic"/></svg>
+      </button>
+      <button class="icon-btn send-btn" onclick="sendMessage()">
+        <svg><use href="#icon-send"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Side panel -->
+  <div class="side-panel">
+
+    <div class="card" style="border-color:rgba(139,92,246,0.2);">
+      <div style="font-family:var(--font-display);font-weight:700;color:var(--text);margin-bottom:0.9rem;font-size:0.95rem;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" style="color:var(--accent);"><use href="#icon-activity"/></svg>
+        Voice Waveform
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:38px;padding:0 0.5rem;" id="waveform">
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+      </div>
+      <div style="text-align:center;font-size:0.77rem;color:var(--text-3);margin-top:0.5rem;">Tap mic to speak</div>
+    </div>
+
+    <div class="card">
+      <div style="font-family:var(--font-display);font-weight:700;color:var(--text);margin-bottom:0.9rem;font-size:0.95rem;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" style="color:var(--primary);"><use href="#icon-clipboard"/></svg>
+        Consultation Tips
+      </div>
+      <div style="font-size:0.83rem;color:var(--text-3);line-height:1.9;">
+        Ask about medications & dosages, severity interpretation, food restrictions, specialist type, home remedies, and emergency handling.
+      </div>
+    </div>
+
+    <div class="card" style="background:{% if emergency %}rgba(244,63,94,0.06){% else %}rgba(16,185,129,0.06){% endif %};border-color:{% if emergency %}rgba(244,63,94,0.2){% else %}rgba(16,185,129,0.15){% endif %};">
+      <div style="font-family:var(--font-display);font-weight:700;margin-bottom:0.7rem;font-size:0.95rem;color:{% if emergency %}#fca5a5{% else %}#6ee7b7{% endif %};display:flex;align-items:center;gap:8px;">
+        {% if emergency %}
+        <svg width="16" height="16"><use href="#icon-alert"/></svg> Alert
+        {% else %}
+        <svg width="16" height="16"><use href="#icon-shield"/></svg> Status
+        {% endif %}
+      </div>
+      <p style="font-size:0.83rem;color:var(--text-2);line-height:1.65;">
+        {% if emergency %}
+        Your diagnosis indicates a potentially high-risk condition. Immediate specialist booking is strongly recommended.
+        {% else %}
+        Current prediction does not indicate emergency, but preventive consultation is advised for clinical confirmation.
+        {% endif %}
+      </p>
+      {% if emergency %}
+      <a href="/hospital_directory?disease={{ disease }}" class="btn btn-danger btn-sm" style="margin-top:0.8rem;display:flex;justify-content:center;">
+        <svg width="13" height="13"><use href="#icon-hospital"/></svg> Book Now
+      </a>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+let synth = window.speechSynthesis;
+
+function speakText(text) {
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 0.9;
+  synth.speak(utt);
+}
+function stopSpeaking() { synth.cancel(); }
+
+function askQuick(q) {
+  document.getElementById('userInput').value = q;
+  sendMessage();
+}
+
+function addMessage(role, text) {
+  const div = document.getElementById('chatMessages');
+  const msg = document.createElement('div');
+  msg.className = 'message' + (role === 'user' ? ' user-msg' : '');
+
+  if (role === 'user') {
+    msg.innerHTML = `
+      <div class="msg-avatar" style="background:rgba(59,130,246,0.18);">
+        <svg width="15" height="15" fill="none" stroke="var(--primary)" stroke-width="1.8"><use href="#icon-user"/></svg>
+      </div>
+      <div class="user-bubble msg-bubble">${text}</div>`;
+  } else {
+    msg.innerHTML = `
+      <div class="msg-avatar" style="background:rgba(139,92,246,0.18);">
+        <svg width="15" height="15" fill="none" stroke="var(--violet)" stroke-width="1.8"><use href="#icon-robot"/></svg>
+      </div>
+      <div class="ai-bubble msg-bubble"><strong style="color:#93c5fd;">AI Doctor:</strong> ${text}</div>`;
+  }
+  div.appendChild(msg);
+  div.scrollTop = div.scrollHeight;
+}
+
+function showTyping() {
+  const div = document.getElementById('chatMessages');
+  const t = document.createElement('div');
+  t.className = 'message'; t.id = 'typingIndicator';
+  t.innerHTML = `
+    <div class="msg-avatar" style="background:rgba(139,92,246,0.18);">
+      <svg width="15" height="15" fill="none" stroke="var(--violet)" stroke-width="1.8"><use href="#icon-robot"/></svg>
+    </div>
+    <div class="typing-dots"><span></span><span></span><span></span></div>`;
+  div.appendChild(t);
+  div.scrollTop = div.scrollHeight;
+}
+function removeTyping() { document.getElementById('typingIndicator')?.remove(); }
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  addMessage('user', msg);
+  input.value = '';
+  showTyping();
+  try {
+    const res = await fetch('/ollama_chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        message: msg,
+        disease: "{{ disease }}", prediction: "{{ prediction }}",
+        confidence: "{{ confidence }}", severity: "{{ severity }}", emergency: "{{ emergency }}"
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    addMessage('ai', data.reply);
+    speakText(data.reply);
+  } catch(e) {
+    removeTyping();
+    addMessage('ai', 'I apologize — there was a connection issue. Please try again.');
+  }
+}
+
+function startVoiceInput() {
+  if (!('webkitSpeechRecognition' in window)) { alert('Voice recognition not supported in this browser.'); return; }
+  const micBtn = document.getElementById('micBtn');
+  const status = document.getElementById('voiceStatus');
+  micBtn.classList.add('listening');
+  status.textContent = 'Listening… speak now';
+
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.start();
+
+  recognition.onresult = function(e) {
+    const t = e.results[0][0].transcript;
+    micBtn.classList.remove('listening');
+    status.textContent = 'Captured: ' + t;
+    document.getElementById('userInput').value = t;
+    setTimeout(() => { status.textContent = ''; }, 3000);
+    sendMessage();
+  };
+  recognition.onerror = function() {
+    micBtn.classList.remove('listening');
+    status.textContent = 'Voice capture failed. Try again.';
+    setTimeout(() => { status.textContent = ''; }, 3000);
+  };
+}
+
+window.onload = function() {
+  if ("{{ emergency }}" === "True" || "{{ emergency }}" === "true") {
+    setTimeout(() => askQuick('I need emergency hospital recommendations for {{ disease }}'), 1000);
+  }
+};
+</script>
+{% endblock %}

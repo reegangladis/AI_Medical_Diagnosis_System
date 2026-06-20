@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="22" height="22" style="color:var(--primary)"><use href="#icon-activity"/></svg>
+    Dashboard
+  </span>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Hero -->
+<div class="card-gradient animate-fade-up" style="margin-bottom:2rem;padding:2.5rem;position:relative;overflow:hidden;">
+  <!-- Decorative orbs -->
+  <div style="position:absolute;top:-80px;right:-80px;width:260px;height:260px;background:rgba(255,255,255,0.04);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-50px;right:120px;width:180px;height:180px;background:rgba(255,255,255,0.03);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:absolute;top:50%;left:60%;width:100px;height:100px;background:rgba(6,182,212,0.07);border-radius:50%;transform:translateY(-50%);pointer-events:none;"></div>
+
+  <div style="position:relative;z-index:1;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.2rem;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span class="badge-cyan badge" style="font-size:0.72rem;">
+            <svg width="10" height="10"><use href="#icon-sparkles"/></svg>
+            AI-Powered Platform
+          </span>
+        </div>
+        <h1 style="font-family:var(--font-display);font-size:2.2rem;font-weight:800;color:#fff;letter-spacing:-0.8px;margin-bottom:0.5rem;line-height:1.15;">
+          Welcome back,<br>{{ user_name }} 👋
+        </h1>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.95rem;max-width:500px;line-height:1.7;">
+          AI-driven diagnostics, voice consultation and hospital decision support — all in one intelligent platform.
+        </p>
+      </div>
+      <div style="opacity:0.2;" class="animate-float">
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <use href="#icon-dna"/>
+        </svg>
+      </div>
+    </div>
+    <div style="display:flex;gap:1rem;margin-top:1.8rem;flex-wrap:wrap;">
+      <a href="/" class="btn btn-lg" style="background:rgba(255,255,255,0.14);color:white;border:1px solid rgba(255,255,255,0.22);backdrop-filter:blur(10px);">
+        <svg width="16" height="16"><use href="#icon-scan"/></svg>
+        New Diagnosis
+      </a>
+      <a href="/ai_doctor" class="btn btn-lg" style="background:rgba(255,255,255,0.08);color:white;border:1px solid rgba(255,255,255,0.14);">
+        <svg width="16" height="16"><use href="#icon-mic"/></svg>
+        AI Doctor
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-4 animate-fade-up delay-1" style="margin-bottom:2rem;">
+  <div class="stat-card reveal">
+    <div class="stat-icon" style="background:rgba(59,130,246,0.14);color:var(--primary);">
+      <svg><use href="#icon-chart"/></svg>
+    </div>
+    <div class="stat-number" data-count="{{ total_scans }}">0</div>
+    <div class="stat-label">Total Scans</div>
+    <div class="stat-sub">Diagnosis reports generated</div>
+  </div>
+  <div class="stat-card reveal delay-1">
+    <div class="stat-icon" style="background:rgba(244,63,94,0.14);color:var(--rose);">
+      <svg><use href="#icon-alert"/></svg>
+    </div>
+    <div class="stat-number" data-count="{{ emergency_cases }}">0</div>
+    <div class="stat-label">Emergencies</div>
+    <div class="stat-sub">Critical cases flagged</div>
+  </div>
+  <div class="stat-card reveal delay-2">
+    <div class="stat-icon" style="background:rgba(16,185,129,0.14);color:var(--emerald);">
+      <svg><use href="#icon-calendar"/></svg>
+    </div>
+    <div class="stat-number" data-count="{{ appointment_count }}">0</div>
+    <div class="stat-label">Appointments</div>
+    <div class="stat-sub">Specialist sessions booked</div>
+  </div>
+  <div class="stat-card reveal delay-3">
+    <div class="stat-icon" style="background:rgba(6,182,212,0.14);color:var(--accent);">
+      <svg><use href="#icon-target"/></svg>
+    </div>
+    <div class="stat-number">96.4%</div>
+    <div class="stat-label">AI Accuracy</div>
+    <div class="stat-sub">Validated prediction engine</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="section-title reveal">
+  <div class="icon" style="background:rgba(245,158,11,0.12);color:var(--amber);">
+    <svg><use href="#icon-zap"/></svg>
+  </div>
+  Quick Actions
+</div>
+<div class="grid grid-3 reveal" style="margin-bottom:2rem;">
+  <a href="/" style="text-decoration:none;">
+    <div class="card" style="cursor:pointer;border-color:rgba(59,130,246,0.18);height:100%;">
+      <div style="width:48px;height:48px;background:rgba(59,130,246,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;color:var(--primary);">
+        <svg width="24" height="24"><use href="#icon-brain"/></svg>
+      </div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:7px;">New AI Diagnosis</div>
+      <div style="font-size:0.85rem;color:var(--text-3);line-height:1.6;">Upload medical scans and get instant AI-powered diagnosis with Grad-CAM heatmaps.</div>
+      <div style="margin-top:1.2rem;font-size:0.82rem;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:5px;">
+        Start scan <svg width="14" height="14"><use href="#icon-arrow-right"/></svg>
+      </div>
+    </div>
+  </a>
+  <a href="/ai_doctor" style="text-decoration:none;">
+    <div class="card" style="cursor:pointer;border-color:rgba(139,92,246,0.18);height:100%;">
+      <div style="width:48px;height:48px;background:rgba(139,92,246,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;color:var(--violet);">
+        <svg width="24" height="24"><use href="#icon-mic"/></svg>
+      </div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:7px;">Voice AI Doctor</div>
+      <div style="font-size:0.85rem;color:var(--text-3);line-height:1.6;">Consult your diagnosis using voice or text and receive real-time medical guidance.</div>
+      <div style="margin-top:1.2rem;font-size:0.82rem;color:var(--violet);font-weight:600;display:flex;align-items:center;gap:5px;">
+        Open chat <svg width="14" height="14"><use href="#icon-arrow-right"/></svg>
+      </div>
+    </div>
+  </a>
+  <a href="/hospital_directory" style="text-decoration:none;">
+    <div class="card" style="cursor:pointer;border-color:rgba(16,185,129,0.18);height:100%;">
+      <div style="width:48px;height:48px;background:rgba(16,185,129,0.12);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;color:var(--emerald);">
+        <svg width="24" height="24"><use href="#icon-hospital"/></svg>
+      </div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text);margin-bottom:7px;">Book Specialist</div>
+      <div style="font-size:0.85rem;color:var(--text-3);line-height:1.6;">Browse hospitals, choose doctors and schedule specialist appointments instantly.</div>
+      <div style="margin-top:1.2rem;font-size:0.82rem;color:var(--emerald);font-weight:600;display:flex;align-items:center;gap:5px;">
+        Find hospitals <svg width="14" height="14"><use href="#icon-arrow-right"/></svg>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- Recent Reports -->
+<div class="card reveal" style="margin-bottom:2rem;">
+  <div class="section-title" style="margin-bottom:1.4rem;">
+    <div class="icon" style="background:rgba(59,130,246,0.1);color:var(--primary);">
+      <svg><use href="#icon-clipboard"/></svg>
+    </div>
+    Recent Diagnosis Reports
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Disease Module</th>
+        <th>Prediction</th>
+        <th>Confidence</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in recent_reports %}
+      <tr>
+        <td><span class="badge badge-blue">{{ r[0]|upper }}</span></td>
+        <td style="color:var(--text);font-weight:600;">{{ r[1] }}</td>
+        <td><span class="badge badge-green">{{ "%.2f"|format(r[2]) }}%</span></td>
+        <td style="color:var(--text-3);font-family:var(--font-mono);font-size:0.82rem;">{{ r[3] }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" style="text-align:center;color:var(--text-3);padding:2.5rem;">
+          No diagnosis records yet. <a href="/" style="color:var(--primary);">Start your first scan →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- AI Recommendation -->
+<div class="card reveal" style="background:linear-gradient(135deg,rgba(59,130,246,0.07),rgba(139,92,246,0.06));border-color:rgba(59,130,246,0.2);">
+  <div style="display:flex;align-items:flex-start;gap:1.2rem;flex-wrap:wrap;">
+    <div style="width:50px;height:50px;background:var(--grad-primary);border-radius:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 24px var(--primary-glow);">
+      <svg width="24" height="24" fill="none" stroke="white" stroke-width="1.8"><use href="#icon-sparkles"/></svg>
+    </div>
+    <div style="flex:1;">
+      <div style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:8px;">AI Health Recommendation</div>
+      <p style="color:var(--text-2);line-height:1.75;font-size:0.9rem;">Based on your recent diagnosis activity, our AI recommends continuous monitoring of high-risk cases, timely specialist consultation, and using the voice AI doctor for symptom clarification before appointments. Emergency detections should be immediately escalated to hospital consultation.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelector('a[href="/home"]')?.classList.add('active');
+</script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Hospital Directory | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" style="color:var(--primary)"><use href="#icon-hospital"/></svg>
+    Hospital Directory
+  </span>
+{% endblock %}
+
+{% block head %}
+<style>
+.hospital-card{background:var(--surface);border:1px solid var(--border);border-radius:22px;overflow:hidden;transition:all 0.3s;display:flex;flex-direction:column;}
+.hospital-card:hover{transform:translateY(-7px);border-color:rgba(59,130,246,0.28);box-shadow:0 24px 56px rgba(0,0,0,0.45),0 0 36px rgba(59,130,246,0.08);}
+.hospital-img{width:100%;height:190px;object-fit:cover;display:block;}
+.hospital-img-placeholder{width:100%;height:190px;background:linear-gradient(135deg,rgba(59,130,246,0.14),rgba(139,92,246,0.1));display:flex;align-items:center;justify-content:center;color:rgba(59,130,246,0.4);}
+.hospital-img-placeholder svg{width:56px;height:56px;}
+.hospital-body{padding:1.3rem;flex:1;display:flex;flex-direction:column;}
+.hospital-name{font-family:var(--font-display);font-weight:700;color:var(--text);font-size:1rem;margin-bottom:7px;}
+.hospital-meta{font-size:0.83rem;color:var(--text-3);line-height:1.85;flex:1;}
+.hospital-meta span{color:var(--text-2);}
+.hospital-footer{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;}
+.map-embed{width:100%;height:128px;border-radius:12px;border:0;margin:0.8rem 0;opacity:0.8;filter:saturate(0.5) brightness(0.65);}
+
+.rating-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.2);border-radius:99px;font-size:0.75rem;font-weight:700;color:#fbbf24;margin-right:6px;}
+.rating-badge svg{width:11px;height:11px;}
+.slots-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:99px;font-size:0.75rem;font-weight:600;color:#34d399;}
+
+.search-row{display:flex;gap:10px;margin-bottom:2rem;align-items:center;}
+.search-wrapper{position:relative;flex:1;}
+.search-icon-abs{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-3);display:flex;align-items:center;}
+.search-row input{width:100%;padding:13px 18px 13px 44px;background:var(--surface);border:1px solid var(--border);border-radius:14px;color:var(--text);font-family:var(--font-body);font-size:0.92rem;outline:none;transition:all 0.2s;}
+.search-row input::placeholder{color:var(--text-3);}
+.search-row input:focus{border-color:rgba(59,130,246,0.5);box-shadow:0 0 0 3px rgba(59,130,246,0.08);}
+
+.hospital-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.5rem;}
+
+.empty-state{text-align:center;padding:3.5rem;grid-column:1/-1;}
+.empty-icon{width:72px;height:72px;background:var(--surface-2);border-radius:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:var(--text-3);}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="animate-fade-up" style="margin-bottom:2rem;">
+  {% if disease %}
+  <p style="color:var(--text-3);font-size:0.87rem;">Recommended specialists for <span class="badge badge-blue" style="font-size:0.82rem;">{{ disease|upper }}</span></p>
+  {% else %}
+  <p style="color:var(--text-3);font-size:0.87rem;">Browse top-rated medical facilities and specialists</p>
+  {% endif %}
+</div>
+
+<!-- Search -->
+<div class="search-row animate-fade-up delay-1">
+  <div class="search-wrapper">
+    <span class="search-icon-abs"><svg width="16" height="16"><use href="#icon-search"/></svg></span>
+    <input type="text" id="searchInput" placeholder="Search by hospital, doctor, location…" onkeyup="filterHospitals()">
+  </div>
+  <span style="color:var(--text-3);font-size:0.85rem;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+    <svg width="14" height="14" style="color:var(--primary);"><use href="#icon-hospital"/></svg>
+    <span id="countLabel">{{ hospitals|length }} hospitals</span>
+  </span>
+</div>
+
+<!-- Grid -->
+<div class="hospital-grid animate-fade-up delay-2" id="hospitalGrid">
+  {% for h in hospitals %}
+  <div class="hospital-card" data-name="{{ h.name|lower }} {{ h.doctor|lower }} {{ h.location|lower }}">
+    
+    {% if h.image %}
+      {% if h.image.startswith('http') %}
+        <img class="hospital-img" src="{{ h.image }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      {% else %}
+        <img class="hospital-img" src="{{ url_for('static', filename='images/hospitals/' + h.image) }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      {% endif %}
+      <div class="hospital-img-placeholder" style="display:none;"><svg><use href="#icon-hospital"/></svg></div>
+    {% else %}
+      <div class="hospital-img-placeholder"><svg><use href="#icon-hospital"/></svg></div>
+    {% endif %}
+
+    <div class="hospital-body">
+      <div class="hospital-name">{{ h.name }}</div>
+      
+      <div style="margin-bottom:0.65rem;">
+        <span class="rating-badge"><svg><use href="#icon-star"/></svg> {{ h.rating }}</span>
+        <span class="slots-badge">{{ h.slots }}</span>
+      </div>
+
+      <div class="hospital-meta">
+        <div style="display:flex;align-items:center;gap:6px;"><svg width="13" height="13"><use href="#icon-user"/></svg> <span>{{ h.doctor }}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;"><svg width="13" height="13"><use href="#icon-map-pin"/></svg> {{ h.location }}</div>
+        <div style="display:flex;align-items:center;gap:6px;"><svg width="13" height="13"><use href="#icon-phone"/></svg> {{ h.contact }}</div>
+      </div>
+
+      <iframe class="map-embed" src="https://maps.google.com/maps?q={{ h.location|urlencode }}&t=&z=13&output=embed" loading="lazy"></iframe>
+
+      <div class="hospital-footer">
+        <a class="btn btn-ghost btn-sm" href="{{ h.map }}" target="_blank">
+          <svg width="13" height="13"><use href="#icon-map-pin"/></svg> Map
+        </a>
+        <a class="btn btn-primary btn-sm" style="flex:1;justify-content:center;"
+           href="/book_appointment?hospital={{ h.name|urlencode }}&doctor={{ h.doctor|urlencode }}&location={{ h.location|urlencode }}&map={{ h.map|urlencode }}">
+          <svg width="13" height="13"><use href="#icon-calendar"/></svg> Book Appointment
+        </a>
+      </div>
+    </div> </div>
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon"><svg width="32" height="32"><use href="#icon-hospital"/></svg></div>
+    <h3 style="font-family:var(--font-display);font-weight:700;">No hospitals found</h3>
+    <p style="margin-top:0.5rem;color:var(--text-3);">Try a different disease filter or check back later.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+function filterHospitals() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const cards = document.querySelectorAll('.hospital-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const match = card.dataset.name.includes(q);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('countLabel').textContent = visible + ' hospitals';
+}
+</script>
+{% endblock %}

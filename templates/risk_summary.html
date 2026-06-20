@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Risk Analytics | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" style="color:var(--primary)"><use href="#icon-chart"/></svg>
+    Risk Analytics
+  </span>
+{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.6rem;transition:all 0.25s;}
+.chart-card:hover{border-color:rgba(59,130,246,0.2);box-shadow:0 0 36px rgba(59,130,246,0.06);}
+.chart-card canvas{max-height:260px;}
+.chart-title{font-family:var(--font-display);font-weight:700;color:var(--text);font-size:0.98rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:8px;}
+.chart-title svg{width:17px;height:17px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<p style="color:var(--text-3);font-size:0.87rem;margin-bottom:2rem;" class="animate-fade-up">AI-powered health risk intelligence and diagnostic trends</p>
+
+<!-- KPIs -->
+<div class="grid grid-4 animate-fade-up delay-1" style="margin-bottom:2rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(59,130,246,0.14);color:var(--primary);"><svg><use href="#icon-scan"/></svg></div>
+    <div class="stat-number" data-count="{{ total }}">0</div>
+    <div class="stat-label">Total Scans</div>
+    <div class="stat-sub">All-time diagnoses</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(244,63,94,0.14);color:var(--rose);"><svg><use href="#icon-alert"/></svg></div>
+    <div class="stat-number" data-count="{{ emergency_count }}">0</div>
+    <div class="stat-label">Emergencies</div>
+    <div class="stat-sub">High-risk cases</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(6,182,212,0.14);color:var(--accent);"><svg><use href="#icon-target"/></svg></div>
+    <div class="stat-number">{{ avg_conf }}%</div>
+    <div class="stat-label">Avg Confidence</div>
+    <div class="stat-sub">Model accuracy</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(139,92,246,0.14);color:var(--violet);"><svg><use href="#icon-activity"/></svg></div>
+    <div class="stat-number" data-count="{{ heatmap_count }}">0</div>
+    <div class="stat-label">Heatmaps</div>
+    <div class="stat-sub">Grad-CAM generated</div>
+  </div>
+</div>
+
+<!-- Charts row 1 -->
+<div class="grid grid-2 animate-fade-up delay-2" style="margin-bottom:1.5rem;">
+  <div class="chart-card reveal">
+    <div class="chart-title">
+      <svg style="color:var(--primary)"><use href="#icon-brain"/></svg>
+      Disease Distribution
+    </div>
+    <canvas id="diseaseChart"></canvas>
+  </div>
+  <div class="chart-card reveal delay-1">
+    <div class="chart-title">
+      <svg style="color:var(--amber)"><use href="#icon-alert"/></svg>
+      Severity Breakdown
+    </div>
+    <canvas id="severityChart"></canvas>
+  </div>
+</div>
+
+<!-- Charts row 2 -->
+<div class="grid grid-2 animate-fade-up delay-3" style="margin-bottom:1.5rem;">
+  <div class="chart-card reveal delay-2">
+    <div class="chart-title">
+      <svg style="color:var(--accent)"><use href="#icon-activity"/></svg>
+      Prediction Trend
+    </div>
+    <canvas id="trendChart"></canvas>
+  </div>
+  <div class="chart-card reveal delay-3">
+    <div class="chart-title">
+      <svg style="color:var(--violet)"><use href="#icon-target"/></svg>
+      Heatmap Generation Trend
+    </div>
+    <canvas id="heatmapChart"></canvas>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+Chart.defaults.color = '#4d6580';
+Chart.defaults.font = { family: "'DM Sans', sans-serif", size: 12 };
+const gridColor = 'rgba(255,255,255,0.04)';
+
+new Chart(document.getElementById('diseaseChart'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ disease_labels|tojson }},
+    datasets: [{ data: {{ disease_counts|tojson }},
+      backgroundColor: ['#3b82f6','#06b6d4','#8b5cf6','#f43f5e','#f59e0b','#10b981'],
+      borderColor: 'rgba(2,8,16,0.8)', borderWidth: 3, hoverOffset: 10 }]
+  },
+  options: { plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, color: '#8facc8' } } }, cutout: '62%' }
+});
+
+new Chart(document.getElementById('severityChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ severity_labels|tojson }},
+    datasets: [{ label: 'Cases', data: {{ severity_counts|tojson }},
+      backgroundColor: ['rgba(16,185,129,0.65)','rgba(245,158,11,0.65)','rgba(244,63,94,0.65)'],
+      borderRadius: 10, borderSkipped: false }]
+  },
+  options: { plugins: { legend: { display: false } },
+    scales: { x: { grid: { color: gridColor }, ticks: { color: '#4d6580' } }, y: { grid: { color: gridColor }, ticks: { color: '#4d6580' } } } }
+});
+
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: {{ trend_labels|tojson }},
+    datasets: [{ label: 'Predictions', data: {{ trend_counts|tojson }},
+      borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.07)',
+      fill: true, tension: 0.45, pointBackgroundColor: '#3b82f6', pointRadius: 4, pointHoverRadius: 6 }]
+  },
+  options: { plugins: { legend: { display: false } },
+    scales: { x: { grid: { color: gridColor }, ticks: { color: '#4d6580' } }, y: { grid: { color: gridColor }, ticks: { color: '#4d6580' } } } }
+});
+
+new Chart(document.getElementById('heatmapChart'), {
+  type: 'line',
+  data: {
+    labels: {{ heatmap_trend_labels|tojson }},
+    datasets: [{ label: 'Heatmaps', data: {{ heatmap_trend_counts|tojson }},
+      borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.07)',
+      fill: true, tension: 0.45, pointBackgroundColor: '#8b5cf6', pointRadius: 4, pointHoverRadius: 6 }]
+  },
+  options: { plugins: { legend: { display: false } },
+    scales: { x: { grid: { color: gridColor }, ticks: { color: '#4d6580' } }, y: { grid: { color: gridColor }, ticks: { color: '#4d6580' } } } }
+});
+</script>
+{% endblock %}

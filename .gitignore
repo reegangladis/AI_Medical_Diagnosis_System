@@ -1,0 +1,12 @@
+venv/
+dataset/
+
+__pycache__/
+*.pyc
+
+# ML models
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.pkl

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% block title %}New Diagnosis | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" style="color:var(--primary)"><use href="#icon-scan"/></svg>
+    New AI Scan
+  </span>
+{% endblock %}
+
+{% block head %}
+<style>
+.upload-zone{
+  border:2px dashed rgba(59,130,246,0.32);border-radius:20px;padding:2.8rem 2rem;text-align:center;
+  cursor:pointer;transition:all 0.25s;background:rgba(59,130,246,0.025);position:relative;overflow:hidden;
+}
+.upload-zone:hover,.upload-zone.drag-over{
+  border-color:#3b82f6;background:rgba(59,130,246,0.07);
+  box-shadow:0 0 40px rgba(59,130,246,0.14);
+}
+.upload-zone input[type=file]{display:none;}
+.upload-icon{
+  width:64px;height:64px;background:rgba(59,130,246,0.1);border-radius:20px;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;
+  color:var(--primary);animation:float 3.5s ease-in-out infinite;
+}
+.upload-icon svg{width:30px;height:30px;}
+.upload-preview{max-width:100%;max-height:200px;border-radius:14px;margin-top:1rem;display:none;border:1px solid rgba(255,255,255,0.1);}
+
+.step-indicator{display:flex;align-items:center;margin-bottom:2rem;}
+.step{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--text-3);font-weight:500;}
+.step.active{color:#93c5fd;}
+.step.done{color:var(--emerald);}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
+.step.active .step-num{background:rgba(59,130,246,0.18);border-color:#3b82f6;color:#93c5fd;}
+.step.done .step-num{background:rgba(16,185,129,0.15);border-color:var(--emerald);color:var(--emerald);}
+.step-line{flex:1;height:1px;background:var(--border);margin:0 10px;}
+
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(2,8,16,0.92);backdrop-filter:blur(16px);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:1.8rem;}
+.loading-overlay.active{display:flex;}
+.scan-ring{width:104px;height:104px;border-radius:50%;border:3px solid rgba(59,130,246,0.2);border-top-color:#3b82f6;animation:spin 1s linear infinite;position:relative;display:flex;align-items:center;justify-content:center;}
+.scan-ring-inner{width:72px;height:72px;border-radius:50%;border:2px solid rgba(139,92,246,0.2);border-bottom-color:#8b5cf6;animation:spin 1.5s linear infinite reverse;display:flex;align-items:center;justify-content:center;color:var(--accent);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.form-select{width:100%;padding:13px 38px 13px 44px;background:rgba(255,255,255,0.035);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-family:var(--font-body);font-size:0.9rem;outline:none;transition:all 0.2s;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234d6580' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;}
+.form-select:focus{border-color:rgba(59,130,246,0.55);background-color:rgba(59,130,246,0.04);box-shadow:0 0 0 3px rgba(59,130,246,0.10);}
+.form-select option{background:var(--bg-3);color:var(--text);}
+
+.checklist-item{display:flex;align-items:center;gap:9px;font-size:0.85rem;color:var(--text-2);padding:5px 0;}
+.checklist-item svg{width:15px;height:15px;color:var(--emerald);flex-shrink:0;}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="scan-ring">
+    <div class="scan-ring-inner">
+      <svg width="28" height="28"><use href="#icon-activity"/></svg>
+    </div>
+  </div>
+  <div style="font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:var(--text);">Analyzing Medical Scan…</div>
+  <div style="color:var(--text-3);font-size:0.9rem;">Deep learning model processing</div>
+  <div id="loadingProgress" style="color:var(--primary);font-size:0.85rem;font-weight:600;min-height:20px;"></div>
+</div>
+
+<!-- Hero -->
+<div style="margin-bottom:1.8rem;" class="animate-fade-up">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:0.7rem;">
+    <div style="width:48px;height:48px;background:var(--grad-primary);border-radius:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px var(--primary-glow);">
+      <svg width="24" height="24" fill="none" stroke="white" stroke-width="1.8"><use href="#icon-scan"/></svg>
+    </div>
+    <div>
+      <h1 style="font-family:var(--font-display);font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;">AI Medical Scan Diagnosis</h1>
+      <p style="color:var(--text-3);font-size:0.87rem;">Upload clinical scans · Get instant prediction · Voice consultation</p>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:0.8rem;">
+    <span class="badge badge-blue">Pneumonia</span>
+    <span class="badge badge-violet">Tuberculosis</span>
+    <span class="badge badge-amber">Brain Tumor</span>
+    <span class="badge badge-cyan">Skin Cancer</span>
+    <span class="badge badge-green">PDF Report</span>
+    <span class="badge badge-red">Heatmap</span>
+  </div>
+</div>
+
+<!-- Step indicator -->
+<div class="step-indicator">
+  <div class="step active"><div class="step-num">1</div>Patient Info</div>
+  <div class="step-line"></div>
+  <div class="step"><div class="step-num">2</div>Select Module</div>
+  <div class="step-line"></div>
+  <div class="step"><div class="step-num">3</div>Upload Scan</div>
+  <div class="step-line"></div>
+  <div class="step"><div class="step-num">4</div>AI Result</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.7fr 1fr;gap:2rem;">
+
+  <!-- Main form -->
+  <div class="card animate-fade-up delay-1" style="padding:2rem;">
+    <form action="/predict" method="POST" enctype="multipart/form-data" id="uploadForm" onsubmit="startLoading()">
+
+      <div class="section-title" style="margin-bottom:1.2rem;">
+        <div class="icon" style="background:rgba(59,130,246,0.1);color:var(--primary);"><svg><use href="#icon-user"/></svg></div>
+        Patient Information
+      </div>
+
+      <div class="grid grid-2" style="margin-bottom:1.2rem;gap:1rem;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Patient Name</label>
+          <div class="input-wrapper">
+            <span class="input-icon"><svg width="16" height="16"><use href="#icon-user"/></svg></span>
+            <input class="form-input" type="text" name="patient_name" value="{{ user_name }}" required>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Patient ID</label>
+          <div class="input-wrapper">
+            <span class="input-icon"><svg width="16" height="16"><use href="#icon-clipboard"/></svg></span>
+            <input class="form-input" type="text" name="patient_id" placeholder="PAT-2024-001" required>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Age</label>
+          <div class="input-wrapper">
+            <span class="input-icon"><svg width="16" height="16"><use href="#icon-activity"/></svg></span>
+            <input class="form-input" type="number" name="age" placeholder="Years" min="1" max="120" required>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Gender</label>
+          <div class="input-wrapper">
+            <span class="input-icon"><svg width="16" height="16"><use href="#icon-user"/></svg></span>
+            <select class="form-select" name="gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="glow-line"></div>
+
+      <div class="section-title" style="margin:1.2rem 0 1rem;">
+        <div class="icon" style="background:rgba(139,92,246,0.1);color:var(--violet);"><svg><use href="#icon-brain"/></svg></div>
+        Disease Module
+      </div>
+
+      <div class="form-group">
+        <div class="input-wrapper">
+          <span class="input-icon"><svg width="16" height="16"><use href="#icon-target"/></svg></span>
+          <select class="form-select" name="disease" required id="diseaseSelect">
+            <option value="pneumonia">Pneumonia (Chest X-ray)</option>
+            <option value="tb">Tuberculosis (Chest X-ray)</option>
+            <option value="brain">Brain Tumor (MRI)</option>
+            <option value="skin">Skin Cancer (Dermoscopy)</option>
+            <option value="bone">Bone Fracture (X-Ray)</option>
+            <option value="lung_cancer">Lung Cancer Detection</option>
+            <option value="malaria">Malaria Detection (Blood Cell)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="glow-line"></div>
+
+      <div class="section-title" style="margin:1.2rem 0 1rem;">
+        <div class="icon" style="background:rgba(6,182,212,0.1);color:var(--accent);"><svg><use href="#icon-upload"/></svg></div>
+        Upload Scan
+      </div>
+
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" name="image" id="fileInput" accept="image/*" required>
+        <div class="upload-icon">
+          <svg><use href="#icon-upload"/></svg>
+        </div>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:1.05rem;color:var(--text);margin-bottom:6px;">Drop your scan here</div>
+        <div style="color:var(--text-3);font-size:0.85rem;margin-bottom:1rem;">or click to browse · JPG, PNG, DICOM</div>
+        <span class="badge badge-cyan">X-ray · MRI · CT · Dermoscopy</span>
+        <img class="upload-preview" id="uploadPreview">
+        <div id="fileName" style="margin-top:0.8rem;color:var(--primary);font-size:0.85rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:1.5rem;font-family:var(--font-display);font-size:1rem;">
+        <svg width="18" height="18"><use href="#icon-scan"/></svg>
+        Start AI Diagnosis
+      </button>
+    </form>
+  </div>
+
+  <!-- Side panel -->
+  <div style="display:flex;flex-direction:column;gap:1.2rem;">
+    <div class="card animate-fade-up delay-2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+        <div style="width:38px;height:38px;background:rgba(59,130,246,0.12);border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--primary);">
+          <svg width="18" height="18"><use href="#icon-robot"/></svg>
+        </div>
+        <div style="font-family:var(--font-display);font-weight:700;color:var(--text);">Diagnostic Engine</div>
+      </div>
+      <p style="color:var(--text-3);font-size:0.85rem;line-height:1.75;">Deep learning CNN models detect abnormalities, classify diseases and calculate confidence levels with explainable Grad-CAM heatmap visualization.</p>
+    </div>
+
+    <div class="card animate-fade-up delay-3">
+      <div style="font-family:var(--font-display);font-weight:700;color:var(--text);margin-bottom:0.9rem;display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" style="color:var(--emerald);"><use href="#icon-check"/></svg>
+        What You Get
+      </div>
+      <div style="display:flex;flex-direction:column;">
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> Disease Prediction</div>
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> Confidence & Severity Analysis</div>
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> Emergency Detection</div>
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> AI Voice Medical Explanation</div>
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> PDF Clinical Report</div>
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> Grad-CAM Heatmap</div>
+        <div class="checklist-item"><svg><use href="#icon-check"/></svg> Hospital Consultation Suggestions</div>
+      </div>
+    </div>
+
+    <div class="card animate-fade-up delay-4" style="background:rgba(244,63,94,0.05);border-color:rgba(244,63,94,0.15);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.7rem;">
+        <svg width="16" height="16" style="color:#f87171;flex-shrink:0;"><use href="#icon-alert"/></svg>
+        <div style="font-size:0.82rem;font-weight:600;color:#fca5a5;">Clinical Disclaimer</div>
+      </div>
+      <p style="color:var(--text-2);font-size:0.8rem;line-height:1.65;">AI outputs are advisory only. A qualified physician must validate all diagnoses before clinical decisions.</p>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+setupDragDrop('uploadZone','fileInput');
+setupImagePreview('fileInput','uploadPreview');
+
+document.getElementById('fileInput').addEventListener('change', function() {
+  if (this.files[0]) {
+    const fn = document.getElementById('fileName');
+    fn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ' + this.files[0].name;
+  }
+});
+
+const loadingMessages = [
+  'Loading AI model…','Preprocessing scan…','Running inference…',
+  'Generating heatmap…','Building PDF report…','Almost done…'
+];
+let msgIdx = 0;
+
+function startLoading() {
+  document.getElementById('loadingOverlay').classList.add('active');
+  const interval = setInterval(() => {
+    if (msgIdx < loadingMessages.length) {
+      document.getElementById('loadingProgress').textContent = loadingMessages[msgIdx++];
+    } else { clearInterval(interval); }
+  }, 1200);
+}
+</script>
+{% endblock %}

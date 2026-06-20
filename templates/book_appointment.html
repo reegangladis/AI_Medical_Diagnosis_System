@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Appointment | MediAI Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;500;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design.css') }}">
+<style>
+body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
+.booking-wrapper{width:100%;max-width:680px;padding:2rem 1.2rem;position:relative;z-index:1;}
+.step-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:99px;font-size:0.78rem;font-weight:600;color:#93c5fd;}
+.hospital-summary{background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.06));border:1px solid rgba(59,130,246,0.2);border-radius:20px;padding:1.4rem;margin-bottom:1.5rem;}
+.summary-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.9rem;}
+.summary-row:last-child{border-bottom:none;}
+.summary-icon{width:34px;height:34px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--primary);}
+.summary-icon svg{width:16px;height:16px;}
+.summary-key{color:var(--text-3);font-size:0.78rem;margin-bottom:1px;}
+.summary-val{color:var(--text);font-weight:600;}
+.booking-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:2rem;backdrop-filter:blur(12px);}
+.date-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem;}
+input[type="date"],input[type="time"]{color-scheme:dark;}
+.appt-summary-box{display:none;margin:1rem 0;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:14px;padding:1rem;}
+.confirm-btn{width:100%;padding:16px;background:var(--grad-primary);color:white;border:none;border-radius:16px;font-family:var(--font-display);font-weight:700;font-size:1.05rem;cursor:pointer;transition:all 0.25s;box-shadow:0 8px 28px var(--primary-glow);display:flex;align-items:center;justify-content:center;gap:10px;}
+.confirm-btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px var(--primary-glow);}
+.trust-row{display:flex;justify-content:center;gap:1.4rem;margin-top:1.5rem;flex-wrap:wrap;}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-3);}
+.trust-item svg{width:13px;height:13px;color:var(--primary);}
+@media(max-width:500px){.date-time-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="navbar" style="width:100%;">
+  <a class="nav-brand" href="/home">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1"/>
+        <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/>
+      </svg>
+    </div>
+    MediAI Suite
+  </a>
+  <div class="nav-links" id="navLinks">
+    <a href="/home">Home</a>
+    <a href="/">New Scan</a>
+    <a href="/history">History</a>
+    <a href="/hospital_directory">Hospitals</a>
+    <a href="/my_appointments">Appointments</a>
+    <a href="/logout" class="nav-logout">Logout</a>
+  </div>
+  <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+  </button>
+</nav>
+
+<div class="booking-wrapper animate-fade-up">
+
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+    <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.3px;display:flex;align-items:center;gap:10px;">
+      <svg width="22" height="22" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      Book Appointment
+    </div>
+    <span class="step-pill">Step 3 of 3</span>
+  </div>
+
+  <!-- Hospital summary -->
+  <div class="hospital-summary">
+    <div style="font-size:0.75rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.9rem;">Appointment Details</div>
+    <div class="summary-row">
+      <div class="summary-icon"><svg><use xlink:href="#icon-hospital"/></svg></div>
+      <div>
+        <div class="summary-key">Hospital</div>
+        <div class="summary-val">{{ hospital_name }}</div>
+      </div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div>
+        <div class="summary-key">Doctor · Specialty</div>
+        <div class="summary-val">{{ doctor_name }} <span style="color:var(--text-3);font-weight:400;">· {{ doctor_type }}</span></div>
+      </div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div>
+        <div class="summary-key">Location</div>
+        <div class="summary-val">{{ location }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking form -->
+  <div class="booking-card">
+    <div style="font-family:var(--font-display);font-weight:700;color:var(--text);margin-bottom:1.4rem;font-size:1.05rem;display:flex;align-items:center;gap:8px;">
+      <svg width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      Select Date & Time
+    </div>
+
+    <form method="POST">
+      <input type="hidden" name="hospital_name" value="{{ hospital_name }}">
+      <input type="hidden" name="doctor_name" value="{{ doctor_name }}">
+      <input type="hidden" name="doctor_type" value="{{ doctor_type }}">
+      <input type="hidden" name="location" value="{{ location }}">
+      <input type="hidden" name="map_link" value="{{ map_link }}">
+
+      <div class="date-time-grid">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Appointment Date</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            </span>
+            <input class="form-input" type="date" name="appointment_date" required id="dateInput">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Preferred Time</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <input class="form-input" type="time" name="appointment_time" required id="timeInput">
+          </div>
+        </div>
+      </div>
+
+      <div class="appt-summary-box" id="apptSummaryBox">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--emerald);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Appointment Summary
+        </div>
+        <div style="font-size:0.87rem;color:var(--text-2);" id="summaryText"></div>
+      </div>
+
+      <button type="submit" class="confirm-btn">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Confirm Booking
+      </button>
+    </form>
+
+    <div class="trust-row">
+      <span class="trust-item"><svg fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Secure</span>
+      <span class="trust-item"><svg fill="none" stroke="currentColor" stroke-width="1.8"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> Confirmation sent</span>
+      <span class="trust-item"><svg fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg> Free cancellation</span>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+document.getElementById('dateInput').min = new Date().toISOString().split('T')[0];
+function updateSummary() {
+  const date = document.getElementById('dateInput').value;
+  const time = document.getElementById('timeInput').value;
+  const box = document.getElementById('apptSummaryBox');
+  if (date && time) {
+    const d = new Date(date + 'T' + time);
+    const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+    box.style.display = 'block';
+    document.getElementById('summaryText').textContent =
+      `${d.toLocaleDateString('en-US', opts)} at ${time} with {{ doctor_name }} at {{ hospital_name }}`;
+  }
+}
+document.getElementById('dateInput').addEventListener('change', updateSummary);
+document.getElementById('timeInput').addEventListener('change', updateSummary);
+</script>
+</body>
+</html>

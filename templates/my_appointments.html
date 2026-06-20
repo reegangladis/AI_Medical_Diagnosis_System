@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}My Appointments | MediAI Suite{% endblock %}
+{% block page_title %}
+  <span style="display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" style="color:var(--primary)"><use href="#icon-calendar"/></svg>
+    My Appointments
+  </span>
+{% endblock %}
+
+{% block head %}
+<style>
+.appt-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1.5rem;
+  margin-bottom:1rem;display:flex;align-items:center;gap:1.4rem;transition:all 0.25s;position:relative;overflow:hidden;
+}
+.appt-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--grad-primary);border-radius:4px 0 0 4px;}
+.appt-card.cancelled::before{background:var(--grad-danger);}
+.appt-card:hover{border-color:rgba(59,130,246,0.25);transform:translateX(4px);}
+.appt-card.cancelled{opacity:0.65;}
+
+.appt-icon{width:56px;height:56px;background:rgba(59,130,246,0.12);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--primary);}
+.appt-icon svg{width:26px;height:26px;}
+.appt-icon.cancelled{background:rgba(244,63,94,0.1);color:#f87171;}
+
+.appt-body{flex:1;min-width:0;}
+.appt-title{font-family:var(--font-display);font-weight:700;color:var(--text);font-size:1rem;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.appt-meta{font-size:0.83rem;color:var(--text-3);line-height:1.9;}
+.appt-meta span{color:var(--text-2);}
+
+.appt-actions{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+
+.status-confirmed{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:0.74rem;font-weight:700;background:rgba(16,185,129,0.12);color:#6ee7b7;border:1px solid rgba(16,185,129,0.2);}
+.status-cancelled{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:0.74rem;font-weight:700;background:rgba(244,63,94,0.1);color:#fca5a5;border:1px solid rgba(244,63,94,0.2);}
+.status-confirmed svg,.status-cancelled svg{width:11px;height:11px;}
+
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:5px;width:fit-content;}
+.tab{padding:8px 20px;border-radius:10px;font-size:0.87rem;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--text-3);border:none;background:transparent;font-family:var(--font-body);}
+.tab.active{background:var(--grad-primary);color:white;box-shadow:0 4px 16px var(--primary-glow);}
+
+.empty-state{text-align:center;padding:3.5rem 2rem;}
+.empty-icon{width:72px;height:72px;background:var(--surface-2);border-radius:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:var(--text-3);}
+
+@media(max-width:640px){.appt-card{flex-direction:column;align-items:flex-start;}.appt-actions{flex-direction:row;width:100%;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;" class="animate-fade-up">
+  <p style="color:var(--text-3);font-size:0.87rem;">Manage your specialist consultations and bookings</p>
+  <a href="/hospital_directory" class="btn btn-primary btn-sm">
+    <svg width="14" height="14"><use href="#icon-hospital"/></svg>
+    Book New
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-3 animate-fade-up delay-1" style="margin-bottom:2rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(59,130,246,0.14);color:var(--primary);"><svg><use href="#icon-calendar"/></svg></div>
+    <div class="stat-number" data-count="{{ appointments|length }}">0</div>
+    <div class="stat-label">Total Booked</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(16,185,129,0.14);color:var(--emerald);"><svg><use href="#icon-check"/></svg></div>
+    <div class="stat-number">Active</div>
+    <div class="stat-label">Tracking Status</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(6,182,212,0.14);color:var(--accent);"><svg><use href="#icon-hospital"/></svg></div>
+    <div class="stat-number">Live</div>
+    <div class="stat-label">Booking Module</div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs animate-fade-up delay-2">
+  <button class="tab active" onclick="filterTab('all',this)">All</button>
+  <button class="tab" onclick="filterTab('confirmed',this)">Confirmed</button>
+  <button class="tab" onclick="filterTab('cancelled',this)">Cancelled</button>
+</div>
+
+{% if appointments %}
+<div id="apptList">
+  {% for a in appointments %}
+  <div class="appt-card {% if a[7]=='Cancelled' %}cancelled{% endif %} reveal" data-status="{{ a[7]|lower }}">
+    <div class="appt-icon {% if a[7]=='Cancelled' %}cancelled{% endif %}">
+      {% if a[7]=='Cancelled' %}
+        <svg><use href="#icon-x"/></svg>
+      {% else %}
+        <svg><use href="#icon-hospital"/></svg>
+      {% endif %}
+    </div>
+    <div class="appt-body">
+      <div class="appt-title">{{ a[1] }}</div>
+      <div class="appt-meta">
+        <div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12"><use href="#icon-user"/></svg> Dr. <span>{{ a[2] }}</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12"><use href="#icon-calendar"/></svg> <span>{{ a[3] }} at {{ a[4] }}</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12"><use href="#icon-map-pin"/></svg> <span>{{ a[5] }}</span></div>
+        <div>Booked: <span>{{ a[8] }}</span></div>
+      </div>
+      <div style="margin-top:7px;">
+        {% if a[7]=='Cancelled' %}
+        <span class="status-cancelled"><svg><use href="#icon-x"/></svg> Cancelled</span>
+        {% else %}
+        <span class="status-confirmed"><svg><use href="#icon-check"/></svg> Confirmed</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="appt-actions">
+      <a class="btn btn-ghost btn-sm" href="{{ a[6] }}" target="_blank">
+        <svg width="13" height="13"><use href="#icon-map-pin"/></svg> Map
+      </a>
+      <a class="btn btn-secondary btn-sm" href="/appointment_slip/{{ a[0] }}">
+        <svg width="13" height="13"><use href="#icon-clipboard"/></svg> Slip
+      </a>
+      {% if a[7] != 'Cancelled' %}
+      <a class="btn btn-danger btn-sm" href="/cancel_appointment/{{ a[0] }}" onclick="return confirm('Cancel this appointment?')">Cancel</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card empty-state animate-fade-up delay-3">
+  <div class="empty-icon"><svg width="32" height="32"><use href="#icon-calendar"/></svg></div>
+  <h3 style="font-family:var(--font-display);font-weight:700;">No appointments yet</h3>
+  <p style="margin-top:0.5rem;color:var(--text-3);font-size:0.9rem;max-width:320px;margin-left:auto;margin-right:auto;">Visit the Hospital Directory to find a specialist and book your first consultation.</p>
+  <a href="/hospital_directory" class="btn btn-primary" style="margin-top:1.4rem;display:inline-flex;">
+    <svg width="16" height="16"><use href="#icon-hospital"/></svg>
+    Browse Hospitals
+  </a>
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script>
+function filterTab(type, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.appt-card').forEach(card => {
+    if (type === 'all') card.style.display = '';
+    else card.style.display = card.dataset.status === type ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
