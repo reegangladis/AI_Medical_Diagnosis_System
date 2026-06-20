@@ -170,7 +170,7 @@ AI-Based-Healthcare-Diagnosis-System/
 <img width="1006" height="827" alt="image" src="https://github.com/user-attachments/assets/162c27a4-ae0d-4634-8aa7-e95722275ca2" />
 <img width="992" height="800" alt="image" src="https://github.com/user-attachments/assets/06d0f5fd-2fcc-446a-9f67-89e1f05ef3d0" />
 
-### Appointment Booking Page
+### AI Clinical Assistant
 
 <img width="1742" height="892" alt="ai docort" src="https://github.com/user-attachments/assets/2fe4f68b-5ba0-418d-b813-1af0996966bb" />
 
