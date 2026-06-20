@@ -142,31 +142,39 @@ AI-Based-Healthcare-Diagnosis-System/
 
 ### Login Page
 
-(Add Screenshot)
+<img width="612" height="872" alt="image" src="https://github.com/user-attachments/assets/8be4af3b-76d7-41da-a343-356cd18b266e" />
+
 
 ### Disease Selection Dashboard
 
-(Add Screenshot)
+<img width="1661" height="901" alt="image" src="https://github.com/user-attachments/assets/12149038-cffd-49c5-a410-e03889520dc2" />
+
 
 ### Medical Image Upload
 
-(Add Screenshot)
+<img width="1877" height="891" alt="image" src="https://github.com/user-attachments/assets/bdc1d696-e79e-4ca1-b6da-0190e40deded" />
+
 
 ### Prediction Results
 
-(Add Screenshot)
+<img width="1830" height="901" alt="image" src="https://github.com/user-attachments/assets/c89eb6ef-bfc9-4ebe-b832-177c6dfa8772" />
+
 
 ### Grad-CAM Heatmap Visualization
 
-(Add Screenshot)
+<img width="542" height="662" alt="image" src="https://github.com/user-attachments/assets/06f4b690-0762-4a5e-a0e3-f0f5b30b7106" />
+
 
 ### Generated Medical Report
 
-(Add Screenshot)
+<img width="1006" height="827" alt="image" src="https://github.com/user-attachments/assets/162c27a4-ae0d-4634-8aa7-e95722275ca2" />
+<img width="992" height="800" alt="image" src="https://github.com/user-attachments/assets/06d0f5fd-2fcc-446a-9f67-89e1f05ef3d0" />
+
 
 ### Prediction History Dashboard
 
-(Add Screenshot)
+<img width="1816" height="901" alt="image" src="https://github.com/user-attachments/assets/20302b1b-7f51-4063-b807-27098cbec6b7" />
+
 
 ---
 
@@ -197,11 +205,11 @@ AI-Based-Healthcare-Diagnosis-System/
 
 BCA Student | AI & Data Science Enthusiast | Machine Learning | Python Developer
 
-📧 Email: [your-email@example.com](mailto:your-email@example.com)
+📧 Email: reegangladis@gmail.com
 
 🔗 LinkedIn: https://www.linkedin.com/in/reegan2806
 
-🔗 GitHub: https://github.com/your-github-username
+🔗 GitHub: https://github.com/reegangladis
 
 ---
 
