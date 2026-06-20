@@ -170,11 +170,22 @@ AI-Based-Healthcare-Diagnosis-System/
 <img width="1006" height="827" alt="image" src="https://github.com/user-attachments/assets/162c27a4-ae0d-4634-8aa7-e95722275ca2" />
 <img width="992" height="800" alt="image" src="https://github.com/user-attachments/assets/06d0f5fd-2fcc-446a-9f67-89e1f05ef3d0" />
 
+### Appointment Booking Page
+
+<img width="1742" height="892" alt="ai docort" src="https://github.com/user-attachments/assets/2fe4f68b-5ba0-418d-b813-1af0996966bb" />
 
 ### Prediction History Dashboard
 
 <img width="1816" height="901" alt="image" src="https://github.com/user-attachments/assets/20302b1b-7f51-4063-b807-27098cbec6b7" />
 
+### Hospital Recommendation Page
+
+<img width="1797" height="897" alt="hos ital" src="https://github.com/user-attachments/assets/109bc146-5988-4cda-a6b6-42d7529ac0bb" />
+
+
+### Appointment Booking Page
+
+<img width="1747" height="876" alt="appontement" src="https://github.com/user-attachments/assets/b7e2874f-02a7-4a90-b52a-dffb59258b9d" />
 
 ---
 
