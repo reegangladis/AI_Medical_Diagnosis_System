@@ -823,18 +823,18 @@ def risk_summary():
     severity_counts = [x[1] for x in severity_data]
 
     trend_data = db.session.query(
-        cast(Prediction.created_at, Date), func.count(Prediction.id)
-    ).filter_by(user_id=session["user_id"]).group_by(cast(Prediction.created_at, Date)).order_by(cast(Prediction.created_at, Date).asc()).all()
+        func.date(Prediction.created_at), func.count(Prediction.id)
+    ).filter_by(user_id=session["user_id"]).group_by(func.date(Prediction.created_at)).order_by(func.date(Prediction.created_at).asc()).all()
     trend_labels = [str(x[0]) for x in trend_data]
     trend_counts = [x[1] for x in trend_data]
 
     heatmap_trend_data = db.session.query(
-        cast(Prediction.created_at, Date), func.count(Prediction.id)
+        func.date(Prediction.created_at), func.count(Prediction.id)
     ).filter(
         Prediction.user_id == session["user_id"],
         Prediction.heatmap_path != None,
         Prediction.heatmap_path != ""
-    ).group_by(cast(Prediction.created_at, Date)).order_by(cast(Prediction.created_at, Date).asc()).all()
+    ).group_by(func.date(Prediction.created_at)).order_by(func.date(Prediction.created_at).asc()).all()
     heatmap_trend_labels = [str(x[0]) for x in heatmap_trend_data]
     heatmap_trend_counts = [x[1] for x in heatmap_trend_data]
 
