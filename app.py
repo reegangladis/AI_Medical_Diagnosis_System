@@ -1,7 +1,6 @@
 import os
 import io
 import sys
-import sqlite3
 from datetime import datetime
 import ollama
 import numpy as np
@@ -54,11 +53,80 @@ DOCTOR_MAP = {
     "malaria": "Pathologist"
 }
 # ----------------------------
-# Paths
+# Database & ORM Config
 # ----------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from sqlalchemy import cast, Date, func
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "database", "app.db")
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    # Render PostgreSQL URL compatibility
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+    
+    # Configure SSL mode for Render PostgreSQL in production
+    if "localhost" not in DATABASE_URL:
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "connect_args": {
+                "sslmode": "require"
+            }
+        }
+    print("✅ Configured database to PostgreSQL")
+else:
+    # Fallback to local SQLite
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+    print("ℹ️ DATABASE_URL not found. Configured fallback to local SQLite.")
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+# Define SQLAlchemy Models
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(50), default='patient')
+
+class Prediction(db.Model):
+    __tablename__ = 'predictions'
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=True)
+    disease = db.Column(db.String(100), nullable=True)
+    prediction = db.Column(db.String(100), nullable=True)
+    confidence = db.Column(db.Float, nullable=True)
+    severity = db.Column(db.String(50), nullable=True)
+    emergency = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    report_path = db.Column(db.String(255), nullable=True)
+    heatmap_path = db.Column(db.String(255), nullable=True)
+    patient_name = db.Column(db.String(120), nullable=True)
+    patient_id = db.Column(db.String(100), nullable=True)
+    age = db.Column(db.Integer, nullable=True)
+    gender = db.Column(db.String(50), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
+class Appointment(db.Model):
+    __tablename__ = 'appointments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    patient_name = db.Column(db.String(120), nullable=True)
+    hospital_name = db.Column(db.String(120), nullable=True)
+    doctor_type = db.Column(db.String(100), nullable=True)
+    appointment_date = db.Column(db.String(50), nullable=True)
+    appointment_time = db.Column(db.String(50), nullable=True)
+    location = db.Column(db.String(255), nullable=True)
+    map_link = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(50), default='Booked')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 REPORTS_FOLDER = os.path.join(BASE_DIR, "static", "reports")
@@ -75,53 +143,12 @@ IMG_SIZE = (224, 224)
 # DB init (auto creates table)
 # ----------------------------
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS predictions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT,
-            disease TEXT,
-            prediction TEXT,
-            confidence REAL,
-            severity TEXT,
-            emergency INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            report_path TEXT,
-            heatmap_path TEXT,
-            patient_name TEXT,
-            patient_id TEXT,
-            age INTEGER,
-            gender TEXT,
-            user_id INTEGER
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            email TEXT UNIQUE,
-            password TEXT,
-            role TEXT DEFAULT 'patient'
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS appointments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            patient_name TEXT,
-            hospital_name TEXT,
-            doctor_type TEXT,
-            appointment_date TEXT,
-            appointment_time TEXT,
-            location TEXT,
-            map_link TEXT,
-            status TEXT DEFAULT 'Booked',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+    try:
+        with app.app_context():
+            db.create_all()
+        print("✅ Database tables initialized successfully.")
+    except Exception as e:
+        print(f"❌ Database table initialization failed: {e}")
 
 init_db()
 
@@ -698,22 +725,27 @@ def predict():
     )
 
     # save in DB (IMPORTANT: save disease too)
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO predictions (
-            filename, disease, prediction, confidence, severity, emergency,
-            report_path, heatmap_path,
-            patient_name, patient_id, age, gender, user_id
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        safe_name, disease, prediction_label, float(confidence), severity, int(emergency),
-        report_rel_path, heatmap_rel_path,
-        patient_name, patient_id, age, gender, session.get("user_id")
-    ))
-    conn.commit()
-    conn.close()
+    pred_record = Prediction(
+        filename=safe_name,
+        disease=disease,
+        prediction=prediction_label,
+        confidence=float(confidence),
+        severity=severity,
+        emergency=int(emergency),
+        report_path=report_rel_path,
+        heatmap_path=heatmap_rel_path,
+        patient_name=patient_name,
+        patient_id=patient_id,
+        age=age,
+        gender=gender,
+        user_id=session.get("user_id")
+    )
+    try:
+        db.session.add(pred_record)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("❌ Database insertion failed:", e)
 
     image_url = url_for("static", filename=f"uploads/{safe_name}")
 
@@ -736,30 +768,26 @@ def history():
         return redirect("/login")
     patient_id = request.args.get("patient_id", "").strip()
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    query = db.session.query(
+        Prediction.id, Prediction.patient_name, Prediction.patient_id, Prediction.age, Prediction.gender,
+        Prediction.filename, Prediction.disease, Prediction.prediction, Prediction.confidence,
+        Prediction.severity, Prediction.emergency, Prediction.created_at, Prediction.report_path, Prediction.heatmap_path
+    ).filter(Prediction.user_id == session.get("user_id"))
 
     if patient_id:
-        cursor.execute("""
-            SELECT id, patient_name, patient_id, age, gender,
-                   filename, disease, prediction, confidence,
-                   severity, emergency, created_at, report_path, heatmap_path
-            FROM predictions
-            WHERE user_id=? AND patient_id LIKE ?
-            ORDER BY id DESC
-        """, (session.get("user_id"), f"%{patient_id}%"))
-    else:
-        cursor.execute("""
-            SELECT id, patient_name, patient_id, age, gender,
-                   filename, disease, prediction, confidence,
-                   severity, emergency, created_at, report_path, heatmap_path
-            FROM predictions
-            WHERE user_id=?
-            ORDER BY id DESC
-        """, (session.get("user_id"),))
+        query = query.filter(Prediction.patient_id.like(f"%{patient_id}%"))
+        
+    query = query.order_by(Prediction.id.desc())
+    results = query.all()
 
-    rows = cursor.fetchall()
-    conn.close()
+    rows = []
+    for r in results:
+        created_str = r.created_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(r.created_at, datetime) else str(r.created_at)
+        rows.append((
+            r.id, r.patient_name, r.patient_id, r.age, r.gender,
+            r.filename, r.disease, r.prediction, r.confidence,
+            r.severity, r.emergency, created_str, r.report_path, r.heatmap_path
+        ))
 
     return render_template("history.html", rows=rows, patient_id=patient_id, user_name=session.get("user_name"))
 
@@ -771,63 +799,44 @@ def risk_summary():
     if "user_id" not in session:
         return redirect("/login")
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    total = Prediction.query.filter_by(user_id=session["user_id"]).count()
+    emergency_count = Prediction.query.filter_by(user_id=session["user_id"], emergency=1).count()
+    heatmap_count = Prediction.query.filter(
+        Prediction.user_id == session["user_id"],
+        Prediction.heatmap_path != None,
+        Prediction.heatmap_path != ""
+    ).count()
 
-    cursor.execute("SELECT COUNT(*) FROM predictions WHERE user_id=?", (session["user_id"],))
-    total = cursor.fetchone()[0]
+    avg_conf = db.session.query(func.avg(Prediction.confidence)).filter_by(user_id=session["user_id"]).scalar() or 0
+    avg_conf = round(float(avg_conf), 2)
 
-    cursor.execute("SELECT COUNT(*) FROM predictions WHERE user_id=? AND emergency=1", (session["user_id"],))
-    emergency_count = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM predictions WHERE user_id=? AND heatmap_path IS NOT NULL AND heatmap_path != ''", (session["user_id"],))
-    heatmap_count = cursor.fetchone()[0]
-
-    cursor.execute("SELECT AVG(confidence) FROM predictions WHERE user_id=?", (session["user_id"],))
-    avg_conf = cursor.fetchone()[0] or 0
-    avg_conf = round(avg_conf, 2)
-
-    cursor.execute("""
-        SELECT disease, COUNT(*) FROM predictions
-        WHERE user_id=?
-        GROUP BY disease
-        ORDER BY COUNT(*) DESC
-    """, (session["user_id"],))
-    disease_data = cursor.fetchall()
+    disease_data = db.session.query(
+        Prediction.disease, func.count(Prediction.id)
+    ).filter_by(user_id=session["user_id"]).group_by(Prediction.disease).order_by(func.count(Prediction.id).desc()).all()
     disease_labels = [x[0].upper() for x in disease_data]
     disease_counts = [x[1] for x in disease_data]
 
-    cursor.execute("""
-        SELECT severity, COUNT(*) FROM predictions
-        WHERE user_id=?
-        GROUP BY severity
-        ORDER BY COUNT(*) DESC
-    """, (session["user_id"],))
-    severity_data = cursor.fetchall()
+    severity_data = db.session.query(
+        Prediction.severity, func.count(Prediction.id)
+    ).filter_by(user_id=session["user_id"]).group_by(Prediction.severity).order_by(func.count(Prediction.id).desc()).all()
     severity_labels = [x[0] for x in severity_data]
     severity_counts = [x[1] for x in severity_data]
 
-    cursor.execute("""
-        SELECT DATE(created_at), COUNT(*) FROM predictions
-        WHERE user_id=?
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
-    """, (session["user_id"],))
-    trend_data = cursor.fetchall()
-    trend_labels = [x[0] for x in trend_data]
+    trend_data = db.session.query(
+        cast(Prediction.created_at, Date), func.count(Prediction.id)
+    ).filter_by(user_id=session["user_id"]).group_by(cast(Prediction.created_at, Date)).order_by(cast(Prediction.created_at, Date).asc()).all()
+    trend_labels = [str(x[0]) for x in trend_data]
     trend_counts = [x[1] for x in trend_data]
 
-    cursor.execute("""
-        SELECT DATE(created_at), COUNT(*) FROM predictions
-        WHERE user_id=? AND heatmap_path IS NOT NULL AND heatmap_path != ''
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at) ASC
-    """, (session["user_id"],))
-    heatmap_trend_data = cursor.fetchall()
-    heatmap_trend_labels = [x[0] for x in heatmap_trend_data]
+    heatmap_trend_data = db.session.query(
+        cast(Prediction.created_at, Date), func.count(Prediction.id)
+    ).filter(
+        Prediction.user_id == session["user_id"],
+        Prediction.heatmap_path != None,
+        Prediction.heatmap_path != ""
+    ).group_by(cast(Prediction.created_at, Date)).order_by(cast(Prediction.created_at, Date).asc()).all()
+    heatmap_trend_labels = [str(x[0]) for x in heatmap_trend_data]
     heatmap_trend_counts = [x[1] for x in heatmap_trend_data]
-
-    conn.close()
 
     return render_template(
         "risk_summary.html",
@@ -1063,27 +1072,22 @@ def book_appointment():
         location = request.form.get("location")
         map_link = request.form.get("map_link")
 
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-
-        cur.execute("""
-            INSERT INTO appointments (
-                user_id, patient_name, hospital_name, doctor_type,
-                appointment_date, appointment_time, location, map_link
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            session["user_id"],
-            session["user_name"],
-            hospital_name,
-            doctor_type,
-            appointment_date,
-            appointment_time,
-            location,
-            map_link
-        ))
-
-        conn.commit()
-        conn.close()
+        appt = Appointment(
+            user_id=session["user_id"],
+            patient_name=session["user_name"],
+            hospital_name=hospital_name,
+            doctor_type=doctor_type,
+            appointment_date=appointment_date,
+            appointment_time=appointment_time,
+            location=location,
+            map_link=map_link
+        )
+        try:
+            db.session.add(appt)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("❌ Booking failed:", e)
 
         return redirect("/my_appointments")
 
@@ -1100,19 +1104,18 @@ def my_appointments():
     if "user_id" not in session:
         return redirect("/login")
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+    appointments_query = db.session.query(
+        Appointment.id, Appointment.hospital_name, Appointment.doctor_type, Appointment.appointment_date,
+        Appointment.appointment_time, Appointment.location, Appointment.map_link, Appointment.status, Appointment.created_at
+    ).filter_by(user_id=session["user_id"]).order_by(Appointment.id.desc()).all()
 
-    cur.execute("""
-        SELECT id, hospital_name, doctor_type, appointment_date,
-       appointment_time, location, map_link, status, created_at
-FROM appointments
-WHERE user_id=?
-ORDER BY id DESC
-    """, (session["user_id"],))
-
-    appointments = cur.fetchall()
-    conn.close()
+    appointments = []
+    for appt in appointments_query:
+        created_str = appt.created_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(appt.created_at, datetime) else str(appt.created_at)
+        appointments.append((
+            appt.id, appt.hospital_name, appt.doctor_type, appt.appointment_date,
+            appt.appointment_time, appt.location, appt.map_link, appt.status, created_str
+        ))
 
     return render_template(
         "my_appointments.html",
@@ -1125,18 +1128,19 @@ def cancel_appointment(aid):
     if "user_id" not in session:
         return redirect("/login")
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-
-    cur.execute("UPDATE appointments SET status='Cancelled' WHERE id=? AND user_id=?", (aid, session["user_id"]))
-    conn.commit()
-    conn.close()
+    appt = Appointment.query.filter_by(id=aid, user_id=session["user_id"]).first()
+    if appt:
+        appt.status = 'Cancelled'
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("❌ Cancel failed:", e)
 
     return redirect("/my_appointments")
 
 import os
 from flask import send_file, session, redirect
-import sqlite3
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -1147,15 +1151,10 @@ def appointment_slip(appointment_id):
         return redirect("/login")
         
     # 1. Fetch appointment details from database
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT hospital_name, doctor_type, appointment_date, appointment_time, location, status 
-        FROM appointments 
-        WHERE id = ? AND user_id = ?
-    """, (appointment_id, session["user_id"]))
-    row = cur.fetchone()
-    conn.close()
+    row = db.session.query(
+        Appointment.hospital_name, Appointment.doctor_type, Appointment.appointment_date,
+        Appointment.appointment_time, Appointment.location, Appointment.status
+    ).filter_by(id=appointment_id, user_id=session["user_id"]).first()
     
     if not row:
         return "Appointment not found", 404
@@ -1240,20 +1239,14 @@ def signup():
         password = request.form.get("password")
         hashed_password = generate_password_hash(password)
 
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-
+        user = User(name=name, email=email, password=hashed_password, role="patient")
         try:
-            cur.execute(
-                "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-                (name, email, hashed_password, "patient")
-            )
-            conn.commit()
-            conn.close()
+            db.session.add(user)
+            db.session.commit()
             flash("Account created successfully! Please sign in.")
             return redirect("/login")
         except Exception as e:
-            conn.close()
+            db.session.rollback()
             flash("Email already exists or signup failed.")
             return redirect("/signup")
 
@@ -1265,16 +1258,11 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
+        user = User.query.filter_by(email=email).first()
 
-        cur.execute("SELECT id, name, password, role FROM users WHERE email=?", (email,))
-        user = cur.fetchone()
-        conn.close()
-
-        if user and check_password_hash(user[2], password):
-            session["user_id"] = user[0]
-            session["user_name"] = user[1]
+        if user and check_password_hash(user.password, password):
+            session["user_id"] = user.id
+            session["user_name"] = user.name
             return redirect("/home")
 
         flash("Invalid login credentials")
@@ -1296,25 +1284,19 @@ def upload_page():
     if "user_id" not in session:
         return redirect("/login")
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
+    total_scans = Prediction.query.filter_by(user_id=session["user_id"]).count()
+    emergency_cases = Prediction.query.filter_by(user_id=session["user_id"], emergency=1).count()
 
-    cur.execute("SELECT COUNT(*) FROM predictions WHERE user_id=?", (session["user_id"],))
-    total_scans = cur.fetchone()[0]
+    recent_query = db.session.query(
+        Prediction.disease, Prediction.prediction, Prediction.confidence, Prediction.created_at
+    ).filter_by(user_id=session["user_id"]).order_by(Prediction.id.desc()).limit(5).all()
 
-    cur.execute("SELECT COUNT(*) FROM predictions WHERE user_id=? AND emergency=1", (session["user_id"],))
-    emergency_cases = cur.fetchone()[0]
+    recent_reports = []
+    for r in recent_query:
+        created_str = r.created_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(r.created_at, datetime) else str(r.created_at)
+        recent_reports.append((r.disease, r.prediction, r.confidence, created_str))
 
-    cur.execute("""
-        SELECT disease, prediction, confidence, created_at
-        FROM predictions
-        WHERE user_id=?
-        ORDER BY id DESC LIMIT 5
-    """, (session["user_id"],))
-    recent_reports = cur.fetchall()
-    cur.execute("SELECT COUNT(*) FROM appointments WHERE user_id=? AND status='Booked'", (session["user_id"],))
-    appointment_count = cur.fetchone()[0]
-    conn.close()
+    appointment_count = Appointment.query.filter_by(user_id=session["user_id"], status='Booked').count()
 
     return render_template(
         "home.html",
