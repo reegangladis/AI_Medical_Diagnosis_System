@@ -28,7 +28,13 @@ sys.stderr.reconfigure(encoding='utf-8')
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "ai_healthcare_secret_123"
+app.secret_key = os.getenv("SECRET_KEY", "ai_healthcare_secret_123")
+
+# Production Security Enhancements
+if os.getenv("FLASK_ENV") == "production":
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # Gemini initialization
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
