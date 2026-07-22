@@ -1,5 +1,6 @@
 venv/
 dataset/
+cell_images/
 
 __pycache__/
 *.pyc
@@ -10,3 +11,21 @@ __pycache__/
 *.pth
 *.ckpt
 *.pkl
+
+# Environments & Keys
+.env
+.env.local
+.env.*
+
+# Local databases
+*.db
+database/*.db
+
+# Ignore generated uploads, reports and heatmaps
+# but keep the directories themselves in Git
+static/uploads/*
+!static/uploads/.gitkeep
+static/reports/*
+!static/reports/.gitkeep
+static/heatmaps/*
+!static/heatmaps/.gitkeep

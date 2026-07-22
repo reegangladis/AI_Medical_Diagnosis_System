@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏥 AI-Based Healthcare Diagnosis System & Medical Imaging Platform
 
 ## 📌 Overview
@@ -227,3 +228,89 @@ BCA Student | AI & Data Science Enthusiast | Machine Learning | Python Developer
 ## ⭐ Support
 
 If you found this project useful, please give it a ⭐ on GitHub and connect with me on LinkedIn.
+=======
+# Medical AI Diagnosis System (MediAI Suite)
+
+Medical AI Diagnosis System is a deep learning-based clinical intelligence platform. It analyzes medical scan images to screen for key conditions, generates clinical reports, offers diagnostic explanations, and allows patients to book specialist appointments.
+
+---
+
+## 🌟 Key Features
+
+1. **Deep Learning Diagnosis**: Detects 7 major pathologies from scan uploads:
+   * **Pneumonia** (X-ray scan)
+   * **Tuberculosis** (X-ray scan)
+   * **Brain Tumor** (MRI scan)
+   * **Skin Cancer** (Dermatoscopic image)
+   * **Bone Fracture** (X-ray scan)
+   * **Lung Cancer** (Categorical: Adenocarcinoma, Large Cell, Squamous, or Normal)
+   * **Malaria** (Blood smear cell slide)
+2. **Explainable AI (Grad-CAM)**: Generates a colorized attention heatmap overlay showing exactly where the neural network focused to highlight anomalies.
+3. **Medical PDF Reports**: Automatically generates download-ready clinical PDF reports with patient info, AI interpretation, and Grad-CAM scans.
+4. **Dual LLM Voice Doctor Chatbot**:
+   * Powered primarily by the **Gemini API** (`gemini-1.5-flash`) for cloud hosting speed and reliability.
+   * Graceful fallback to local **Ollama** (`gemma:2b`) or rule-based medical dialogue engines if keys are not provided.
+5. **Hospital Directory & Appointment Booking**: Recommends local specialist doctors (e.g. Pulmonologist, Neurologist) and provides booking slips with interactive maps.
+6. **Graceful Simulation/Demo Mode**: Since model files (`.h5`) are large and gitignored, the app automatically runs in a fully-functional simulation mode if model files are missing on live servers (e.g., Render/Heroku).
+
+---
+
+## 💻 Tech Stack
+
+* **Backend**: Flask, TensorFlow/Keras, OpenCV (CV2), sqlite3, ReportLab, python-dotenv
+* **Frontend**: HTML5 (Semantic Structure), Vanilla CSS (Responsive Glassmorphism & Mesh Backgrounds), JavaScript (Number counters, mobile nav toggles, buttons ripple effects)
+* **Hosting Configuration**: WSGI, Gunicorn, Procfile
+
+---
+
+## 🚀 Local Installation & Quickstart
+
+### Prerequisites
+* Python 3.9+
+* pip
+
+### Setup Instructions
+
+1. **Clone the Repository**:
+   ```bash
+   git clone <your-repository-url>
+   cd medical-ai-diagnosis
+   ```
+
+2. **Initialize Virtual Environment**:
+   ```bash
+   python -m venv venv
+   # On Windows:
+   .\venv\Scripts\activate
+   # On Linux/macOS:
+   source venv/bin/activate
+   ```
+
+3. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Setup Environment Variables**:
+   Create a `.env` file in the root folder:
+   ```env
+   GOOGLE_MAPS_API_KEY=your_google_maps_key
+   GEMINI_API_KEY=your_gemini_api_key
+   ```
+   *(Note: If no `GEMINI_API_KEY` is provided, the chat feature will fallback to Ollama or rule-based replies).*
+
+5. **Run the Application**:
+   ```bash
+   python wsgi.py
+   ```
+   Open your browser to: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+---
+
+## 📦 Deployment Configuration
+
+This repository is optimized for deployment to hosts like **Render**, **Heroku**, or private VPS:
+* **Procfile**: Declares process types for cloud servers: `web: gunicorn wsgi:app`
+* **wsgi.py**: The WSGI entrypoint that automatically instantiates the database schema before starting the app process.
+* **Database & Uploads Ignored**: Local SQLite databases (`*.db`) and generated uploads, reports, and heatmaps are ignored in `.gitignore` to keep repositories clean.
+>>>>>>> 8a508842 (Updated login page and fixed dashboard)
