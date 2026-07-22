@@ -1,4 +1,4 @@
-# Medical AI Diagnosis System (MediAI Suite)
+# AI Medical Diagnosis System (MediAI Suite)
 
 Medical AI Diagnosis System is a deep learning-based clinical intelligence platform. It analyzes medical scan images to screen for key conditions, generates clinical reports, offers diagnostic explanations, and allows patients to book specialist appointments.
 
