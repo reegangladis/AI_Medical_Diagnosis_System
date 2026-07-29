@@ -4,13 +4,10 @@ cell_images/
 
 __pycache__/
 *.pyc
+*.pyo
 
-# ML models
-*.h5
-*.pt
-*.pth
+# ML models — tracked by Git LFS via .gitattributes
 *.ckpt
-*.pkl
 
 # Environments & Keys
 .env
@@ -23,10 +20,31 @@ __pycache__/
 database/*.db
 
 # Ignore generated uploads, reports and heatmaps
-# but keep the directories themselves in Git
+# but keep the directories themselves in Git via .gitkeep
 static/uploads/*
 !static/uploads/.gitkeep
 static/reports/*
 !static/reports/.gitkeep
 static/heatmaps/*
 !static/heatmaps/.gitkeep
+
+# OS / IDE artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/

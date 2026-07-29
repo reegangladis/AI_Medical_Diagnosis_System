@@ -1,15 +1,31 @@
-Flask>=3.0.0
-tensorflow>=2.15.0
-numpy>=1.23.5
-opencv-python>=4.8.0
-pillow>=10.0.0
-requests>=2.31.0
-reportlab>=4.0.0
-python-dotenv>=1.0.0
-ollama>=0.1.0
-google-generativeai>=0.3.0
-gunicorn>=21.2.0
-psycopg2-binary>=2.9.9
-SQLAlchemy>=2.0.25
-Flask-SQLAlchemy>=3.1.1
-Flask-Migrate>=4.0.5
+# Core Web Framework
+Flask==3.0.3
+gunicorn==21.2.0
+Werkzeug==3.0.3
+
+# Database
+SQLAlchemy==2.0.30
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+psycopg2-binary==2.9.9
+
+# Machine Learning
+tensorflow==2.15.0
+numpy==1.26.4
+
+# Image Processing
+# opencv-python-headless avoids libGL/libSM dependency errors on Linux servers
+opencv-python-headless==4.9.0.80
+Pillow==10.3.0
+
+# PDF Generation
+reportlab==4.1.0
+
+# AI / API clients
+google-generativeai==0.5.4
+ollama==0.2.0
+
+# Utilities
+requests==2.31.0
+python-dotenv==1.0.1
+Flask-Cors==4.0.0

@@ -28,7 +28,18 @@ sys.stderr.reconfigure(encoding='utf-8')
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "ai_healthcare_secret_123")
+
+# SECRET_KEY: must be explicitly set in production — no weak fallback allowed
+_secret_key = os.getenv("SECRET_KEY")
+if not _secret_key:
+    if os.getenv("FLASK_ENV") == "production":
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set. "
+            "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+        )
+    # Development fallback only
+    _secret_key = "dev_only_insecure_key_do_not_use_in_production"
+app.secret_key = _secret_key
 
 # Production Security Enhancements
 if os.getenv("FLASK_ENV") == "production":
@@ -175,13 +186,17 @@ def safe_load_model(path, name):
         print(f"❌ Failed to load {name}: {e}")
         return None
 
-PNEUMONIA_MODEL_PATH = os.path.join(BASE_DIR, "models", "pneumonia_model.h5")
-TB_MODEL_PATH = os.path.join(BASE_DIR, "models", "tb_model.h5")
-BRAIN_MODEL_PATH = os.path.join(BASE_DIR, "models", "brain_tumor_model.h5")
-SKIN_MODEL_PATH = os.path.join(BASE_DIR, "models", "skin_cancer_model.h5")
-BONE_MODEL_PATH = os.path.join(BASE_DIR, "models", "bone_model.h5")
-LUNG_MODEL_PATH = os.path.join(BASE_DIR, "models", "lung_cancer_model.h5")
-MALARIA_MODEL_PATH = os.path.join(BASE_DIR, "models", "malaria_model.h5")
+# MODELS_DIR can be set to a custom path (e.g., Render Persistent Disk: /var/data/models)
+# Defaults to ./models/ relative to the app directory
+MODELS_DIR = os.getenv("MODELS_DIR") or os.path.join(BASE_DIR, "models")
+
+PNEUMONIA_MODEL_PATH = os.path.join(MODELS_DIR, "pneumonia_model.h5")
+TB_MODEL_PATH = os.path.join(MODELS_DIR, "tb_model.h5")
+BRAIN_MODEL_PATH = os.path.join(MODELS_DIR, "brain_tumor_model.h5")
+SKIN_MODEL_PATH = os.path.join(MODELS_DIR, "skin_cancer_model.h5")
+BONE_MODEL_PATH = os.path.join(MODELS_DIR, "bone_model.h5")
+LUNG_MODEL_PATH = os.path.join(MODELS_DIR, "lung_cancer_model.h5")
+MALARIA_MODEL_PATH = os.path.join(MODELS_DIR, "malaria_model.h5")
 
 malaria_model = safe_load_model(MALARIA_MODEL_PATH, "Malaria Model")
 pneumonia_model = safe_load_model(PNEUMONIA_MODEL_PATH, "Pneumonia Model")
@@ -1313,6 +1328,17 @@ def upload_page():
         appointment_count=appointment_count
     )
 
+# ----------------------------
+# Health Check Route
+# ----------------------------
+@app.route("/health")
+def health_check():
+    """Lightweight health check endpoint for Render / load balancers.
+    Returns 200 OK if the app is running. Does not require authentication."""
+    return {"status": "ok", "service": "MediAI Suite"}, 200
+
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    # debug=True is only enabled in local development — never in production
+    is_dev = os.getenv("FLASK_ENV", "development") != "production"
+    app.run(debug=is_dev, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))

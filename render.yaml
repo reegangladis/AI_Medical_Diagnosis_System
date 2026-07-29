@@ -1,0 +1,53 @@
+# render.yaml — Render Blueprint for AI Healthcare Diagnosis System
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: medical-ai-diagnosis
+    env: python
+    region: oregon  # Change to your preferred region: oregon, frankfurt, singapore, ohio
+    plan: standard  # standard plan required for the memory needed by TensorFlow
+    buildCommand: >
+      pip install -r requirements.txt &&
+      flask db upgrade
+    startCommand: gunicorn wsgi:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    autoDeploy: true
+
+    # Persistent Disk: stores ML model files (.h5) between deploys
+    # Mount your models here and set MODELS_DIR=/var/data/models
+    disk:
+      name: model-storage
+      mountPath: /var/data
+      sizeGB: 5  # Adjust: 7 models total ~320MB, 5GB gives room to grow
+
+    envVars:
+      - key: FLASK_ENV
+        value: production
+
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generates a secure random value
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medical-ai-db
+          property: connectionString
+
+      - key: GEMINI_API_KEY
+        sync: false  # Set manually in Render dashboard
+
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false  # Set manually in Render dashboard
+
+      - key: MODELS_DIR
+        value: /var/data/models
+
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+
+databases:
+  - name: medical-ai-db
+    databaseName: medical_ai
+    user: medical_ai_user
+    plan: free  # Upgrade to starter/standard for production persistence
+    region: oregon
