@@ -172,13 +172,27 @@ init_db()
 # ----------------------------
 # Load models safely
 # ----------------------------
+class PatchedInputLayer(tf.keras.layers.InputLayer):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("optional", None)
+        if "batch_shape" in kwargs and "batch_input_shape" not in kwargs:
+            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+        super().__init__(*args, **kwargs)
+
 def safe_load_model(path, name):
     if not os.path.exists(path):
         print(f"⚠ {name} not found: {path}")
         return None
     try:
         print(f"✅ Loading {name}...")
-        m = tf.keras.models.load_model(path, compile=False)
+        m = tf.keras.models.load_model(
+            path,
+            compile=False,
+            custom_objects={
+                "InputLayer": PatchedInputLayer,
+                "input_layer": PatchedInputLayer,
+            },
+        )
         # warm-up
         _ = m(np.zeros((1, IMG_SIZE[0], IMG_SIZE[1], 3), dtype=np.float32), training=False)
         return m
